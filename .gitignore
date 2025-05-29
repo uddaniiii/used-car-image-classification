@@ -1,3 +1,6 @@
 *.zip
 data/
 wandb/
+checkpoints/
+*.csv
+__pycache__/
