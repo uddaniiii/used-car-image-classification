@@ -1,3 +1,5 @@
+import pandas as pd
+
 def load_confusion_pairs(file_path):
     pairs = []
     with open(file_path, 'r', encoding='utf-8') as f:
