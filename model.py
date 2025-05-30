@@ -9,8 +9,8 @@ import os
 class BaseModel(nn.Module):
     def __init__(self, model_name, num_classes, pretrained=True):
         super(BaseModel, self).__init__()
-        self.backbone = getattr(models, model_name)(pretrained=pretrained)
-        # resnet
+        self.backbone = getattr(models, model_name)(weights='DEFAULT' if pretrained else None)  # torchvision 모델 불러오기
+        # # resnet
         # self.feature_dim = self.backbone.fc.in_features 
         # self.backbone.fc = nn.Identity()  # feature extractor로만 사용
         
@@ -22,7 +22,7 @@ class BaseModel(nn.Module):
         # self.feature_dim = self.backbone.head.in_features  # swin은 head가 마지막 fc
         # self.backbone.head = nn.Identity()  # feature extractor로만 사용
         
-        # efficientNet
+        # # efficientNet
         # self.feature_dim = self.backbone.classifier[1].in_features  # EfficientNet 구조 기준
         # self.backbone.classifier = nn.Identity()  # feature extractor로 사용
 
@@ -54,11 +54,12 @@ class TimmModel(nn.Module):
     def __init__(self, model_name, num_classes, pretrained=True):
         super(TimmModel, self).__init__()
         self.backbone = timm.create_model(model_name, pretrained=pretrained, num_classes=0)  
+        # base
         self.feature_dim = self.backbone.num_features
         self.head = nn.Linear(self.feature_dim, num_classes)
 
     def forward(self, x):
         x = self.backbone(x)
-        print(x.shape)
+        # print(x.shape)
         x = self.head(x)
         return x
