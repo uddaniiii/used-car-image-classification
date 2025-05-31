@@ -2,6 +2,7 @@ import os
 import numpy as np
 import cv2
 from torch.utils.data import Dataset
+from PIL import Image 
 
 def imread_unicode(path):
     stream = np.fromfile(path, dtype=np.uint8)
@@ -37,20 +38,53 @@ class CustomImageDataset(Dataset):
     def __len__(self):
         return len(self.samples)
 
+    # # albumentation 용
+    # def __getitem__(self, idx):
+    #     if self.is_test:
+    #         img_path = self.samples[idx][0]
+    #         # image = Image.open(img_path).convert('RGB')
+    #         image = imread_unicode(img_path)  # 수정됨
+    #         if self.transform:
+    #             # image = self.transform(image)
+    #             image = self.transform(image=image)['image']
+    #         return image
+    #     else:
+    #         img_path, label = self.samples[idx]
+    #         # image = Image.open(img_path).convert('RGB')
+    #         image = imread_unicode(img_path)  # 수정됨
+    #         if self.transform:
+    #             # image = self.transform(image)
+    #             image = self.transform(image=image)['image']
+    #         return image, label
+
+    # timm 용
     def __getitem__(self, idx):
         if self.is_test:
             img_path = self.samples[idx][0]
-            # image = Image.open(img_path).convert('RGB')
-            image = imread_unicode(img_path)  # 수정됨
+            image = imread_unicode(img_path)  # numpy.ndarray
+            image = Image.fromarray(image)    # numpy → PIL
             if self.transform:
-                # image = self.transform(image)
-                image = self.transform(image=image)['image']
+                image = self.transform(image)  # timm transform은 PIL 이미지 사용
             return image
         else:
             img_path, label = self.samples[idx]
-            # image = Image.open(img_path).convert('RGB')
-            image = imread_unicode(img_path)  # 수정됨
+            image = imread_unicode(img_path)  # numpy.ndarray
+            image = Image.fromarray(image)    # numpy → PIL
             if self.transform:
-                # image = self.transform(image)
-                image = self.transform(image=image)['image']
+                image = self.transform(image)
             return image, label
+        
+    # # image, label, img_path도 반환해야할때
+    # def __getitem__(self, idx):
+    #     if self.is_test:
+    #         img_path = self.samples[idx][0]
+    #         image = imread_unicode(img_path)
+    #         if self.transform:
+    #             image = self.transform(image=image)['image']
+    #         return image
+    #     else:
+    #         img_path, label = self.samples[idx]
+    #         image = imread_unicode(img_path)
+    #         if self.transform:
+    #             image = self.transform(image=image)['image']
+    #         return image, label, img_path  # ✅ 경로도 함께 반환!
