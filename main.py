@@ -32,7 +32,7 @@ def main():
 
     wandb.init(
         project="used-car-classification",
-        name=config.MODEL_NAME,
+        name=config.MODEL_PATH,
         config={
             'IMG_SIZE': args.img_size,
             'BATCH_SIZE': args.batch_size,
@@ -65,7 +65,8 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=config.NUM_WORKERS)
 
     # 실험할 때 확인할 것
-    model = BaseModel(model_name='densenet169', num_classes=len(train_dataset.dataset.class_to_idx)).to(device)
+    model = TimmModel(model_name=config.MODEL_NAME, num_classes=len(train_dataset.dataset.class_to_idx)).to(device)
+    # print(model)
     class_names = list(train_dataset.dataset.class_to_idx.keys())
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -96,7 +97,7 @@ def main():
         if val_logloss < best_logloss:
             best_logloss = val_logloss
 
-            filename = f"{epoch+1}_{train_loss:.4f}_{val_loss:.4f}.pth"
+            filename = f"{epoch+1}_{train_loss:.4f}_{val_loss:.4f}_{val_logloss:.4f}.pth"
             os.makedirs(config.SAVE_DIR, exist_ok=True)  # 디렉토리 없으면 생성
             save_path = os.path.join(config.SAVE_DIR, filename)
             torch.save(model.state_dict(), save_path)
