@@ -11,12 +11,12 @@ import config
 from transforms import get_transforms
 from model import BaseModel, TimmModel
 from utils import seed_everything, load_class_names
-import tqdm 
+from tqdm import tqdm
 
 def parse_args():
     parser = argparse.ArgumentParser(description="used-car-image-classification")
-    parser.add_argument("--model_path", type=str, required=True, help="학습된 모델 가중치 경로")
-    parser.add_argument("--output_csv", type=str, default="submission.csv", help="출력 제출 파일명")
+    parser.add_argument("--weight_path", type=str, required=True, help="학습된 모델 가중치 경로")
+    parser.add_argument("--output_csv", type=str, default=config.OUTPUT_CSV, help="출력 제출 파일명")
     parser.add_argument("--img_size", type=int, default=config.IMG_SIZE)
     parser.add_argument("--batch_size", type=int, default=64, help="배치 사이즈")
     parser.add_argument("--seed", type=int, default=42, help="시드")
@@ -34,8 +34,8 @@ def main():
     test_dataset = CustomImageDataset(config.TEST_DIR, transform=val_transform, is_test=True)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
-    model = BaseModel(model_name='densenet169', num_classes=len(class_names)).to(device)
-    model.load_state_dict(torch.load(args.model_path, map_location=device))
+    model = TimmModel(model_name=config.MODEL_NAME, num_classes=len(class_names)).to(device)
+    model.load_state_dict(torch.load(args.weight_path, map_location=device))
     model.to(device)
     model.eval()
 
