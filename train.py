@@ -4,6 +4,7 @@ import torch.optim as optim
 from tqdm import tqdm
 from sklearn.metrics import log_loss
 import torch.nn.functional as F
+from transforms import cutmix_only, mixup_only, mixed
 
 def train_one_epoch(model, dataloader, criterion, optimizer, device):
     model.train()
@@ -14,6 +15,9 @@ def train_one_epoch(model, dataloader, criterion, optimizer, device):
     for images, labels in tqdm(dataloader, desc="Training"):
         images, labels = images.to(device), labels.to(device)
 
+        # CutMix / MixUp 적용
+        images, labels = cutmix_only(images, labels)
+
         optimizer.zero_grad()
         outputs = model(images) 
         loss = criterion(outputs, labels)
@@ -22,7 +26,13 @@ def train_one_epoch(model, dataloader, criterion, optimizer, device):
 
         train_loss += loss.item()
         _, preds = torch.max(outputs, 1)
-        correct += (preds == labels).sum().item()
+
+        # CutMix / MixUp 적용
+        labels_idx = torch.argmax(labels, dim=1)  # soft label -> 정수 인덱스
+
+        # correct += (preds == labels).sum().item() # base
+        correct += (preds == labels_idx).sum().item()
+
         total += labels.size(0)
 
     avg_loss = train_loss / len(dataloader)
