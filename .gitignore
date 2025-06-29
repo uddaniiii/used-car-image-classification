@@ -4,5 +4,4 @@ wandb/
 checkpoints/
 *.csv
 __pycache__/
-*.txt
 npy/
