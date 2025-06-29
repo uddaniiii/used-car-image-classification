@@ -12,11 +12,13 @@ from transforms import get_transforms
 from model import BaseModel, TimmModel
 from utils import seed_everything, load_class_names
 from tqdm import tqdm
+import numpy as np  # npy 저장용
 
 def parse_args():
     parser = argparse.ArgumentParser(description="used-car-image-classification")
     parser.add_argument("--weight_path", type=str, required=True, help="학습된 모델 가중치 경로")
     parser.add_argument("--output_csv", type=str, default=config.OUTPUT_CSV, help="출력 제출 파일명")
+    parser.add_argument("--output_npy", type=str, default=config.OUTPUT_NPY, help="확률값 npy 저장 경로 (옵션)")
     parser.add_argument("--img_size", type=int, default=config.IMG_SIZE)
     parser.add_argument("--batch_size", type=int, default=64, help="배치 사이즈")
     parser.add_argument("--seed", type=int, default=42, help="시드")
@@ -40,12 +42,15 @@ def main():
     model.eval()
 
     results = []
+    all_probs = []
 
     with torch.no_grad():
         for images in tqdm(test_loader, desc="Inference Progress"):
             images = images.to(device)
             outputs = model(images)
             probs = F.softmax(outputs, dim=1)
+
+            all_probs.append(probs.cpu().numpy())
 
             # 각 배치의 확률을 리스트로 변환
             for prob in probs.cpu():  # prob: (num_classes,)
@@ -66,5 +71,12 @@ def main():
 
     print(f"✅ Inference 완료. 확률 기반 결과 저장됨: {args.output_csv}")
 
+    # npy 저장 옵션이 있을 때 저장
+    if args.output_npy:
+        all_probs_array = np.concatenate(all_probs, axis=0)
+        print("🔍 npy 저장 shape:", all_probs_array.shape)  # 👈 추가
+        np.save(args.output_npy, all_probs_array)
+        print(f"✅ 확률값 npy 파일로 저장 완료: {args.output_npy}")
+        
 if __name__ == "__main__":
     main()
