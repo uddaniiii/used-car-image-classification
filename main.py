@@ -11,6 +11,7 @@ from model import BaseModel, TimmModel
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Subset
 import os
+from losses import get_loss_fn
 
 def parse_args():
     parser = argparse.ArgumentParser(description="used-car-image-classification")
@@ -18,6 +19,7 @@ def parse_args():
     parser.add_argument("--img_size", type=int, default=config.IMG_SIZE)
     parser.add_argument("--batch_size", type=int, default=config.BATCH_SIZE)
     parser.add_argument("--epochs", type=int, default=config.EPOCHS)
+    parser.add_argument("--loss", type=str, default=config.LOSS)
     parser.add_argument("--lr", type=float, default=config.LR)
     parser.add_argument("--seed", type=int, default=config.SEED)
 
@@ -65,13 +67,23 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=config.NUM_WORKERS)
 
     # 실험할 때 확인할 것
-    model = TimmModel(model_name=config.MODEL_NAME, num_classes=len(train_dataset.dataset.class_to_idx)).to(device)
+    # model = TimmModel(model_name=config.MODEL_NAME, num_classes=len(train_dataset.dataset.class_to_idx)).to(device)
+    model = TimmModel(
+        model_name=config.MODEL_NAME,
+        num_classes=len(train_dataset.dataset.class_to_idx),
+        scale=30.0  # 또는 적절히 튜닝
+    ).to(device)
+
     # print(model)
     class_names = list(train_dataset.dataset.class_to_idx.keys())
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    criterion = torch.nn.CrossEntropyLoss()
-
+    
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+    #     optimizer, T_max=6, eta_min=0.0003967605077052988
+    # )
+    
+    criterion = get_loss_fn(args.loss)
     best_logloss = float('inf')
     patience = 8
     counter = 0
@@ -79,6 +91,8 @@ def main():
     for epoch in range(args.epochs):
         train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer, device)
         val_loss, val_acc, val_logloss = validate_one_epoch(model, val_loader, criterion, device, class_names)
+
+        # scheduler.step()
 
         wandb.log({
             "Epoch": epoch + 1,
